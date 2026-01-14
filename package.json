@@ -12,25 +12,31 @@
     "install-all": "npm install && cd client && npm install",
     "seed": "node src/server/seed.js"
   },
-  "keywords": ["food-waste", "ai", "safety", "donation", "ngo"],
+  "keywords": [
+    "food-waste",
+    "ai",
+    "safety",
+    "donation",
+    "ngo"
+  ],
   "author": "Achayapathra Team",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1",
-    "sqlite3": "^5.1.6",
+    "axios": "^1.13.2",
     "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "uuid": "^9.0.1",
-    "sharp": "^0.32.6",
-    "moment": "^2.29.4",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "geolib": "^3.3.4",
+    "jsonwebtoken": "^9.0.2",
+    "moment": "^2.29.4",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.32.6",
     "socket.io": "^4.7.4",
-    "axios": "^1.6.0"
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
   }
 }
