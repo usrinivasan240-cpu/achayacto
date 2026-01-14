@@ -9,7 +9,8 @@
     "client": "cd client && npm start",
     "build": "npm install && cd client && npm install && npm run build",
     "start": "node src/server/server.js",
-    "install-all": "npm install && cd client && npm install"
+    "install-all": "npm install && cd client && npm install",
+    "seed": "node src/server/seed.js"
   },
   "keywords": ["food-waste", "ai", "safety", "donation", "ngo"],
   "author": "Achayapathra Team",
