@@ -1,0 +1,34 @@
+{
+  "name": "achayapathra-food-waste-reduction",
+  "version": "1.0.0",
+  "description": "AI-Powered Food Waste Reduction & Safety Verification Platform",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon src/server/server.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "start": "node src/server/server.js",
+    "install-all": "npm install && cd client && npm install"
+  },
+  "keywords": ["food-waste", "ai", "safety", "donation", "ngo"],
+  "author": "Achayapathra Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.6",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.1",
+    "sharp": "^0.32.6",
+    "moment": "^2.29.4",
+    "geolib": "^3.3.4",
+    "socket.io": "^4.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}
