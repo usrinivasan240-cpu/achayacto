@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
 const NotificationContext = createContext();
@@ -14,6 +14,22 @@ export const useNotifications = () => {
 export const NotificationProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [notifications, setNotifications] = useState([]);
+
+  const removeNotification = useCallback((id) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
+  }, []);
+
+  const addNotification = useCallback((notification) => {
+    const id = Date.now();
+    const newNotification = { ...notification, id, timestamp: new Date() };
+    
+    setNotifications(prev => [newNotification, ...prev]);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      removeNotification(id);
+    }, 5000);
+  }, [removeNotification]);
 
   useEffect(() => {
     // Initialize socket connection
@@ -48,23 +64,7 @@ export const NotificationProvider = ({ children }) => {
     return () => {
       newSocket.close();
     };
-  }, []);
-
-  const addNotification = (notification) => {
-    const id = Date.now();
-    const newNotification = { ...notification, id, timestamp: new Date() };
-    
-    setNotifications(prev => [newNotification, ...prev]);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      removeNotification(id);
-    }, 5000);
-  };
-
-  const removeNotification = (id) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  };
+  }, [addNotification]);
 
   const clearNotifications = () => {
     setNotifications([]);
