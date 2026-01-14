@@ -12,6 +12,7 @@ const moment = require('moment');
 const { getDistance } = require('geolib');
 const http = require('http');
 const socketIo = require('socket.io');
+const axios = require('axios');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,6 +22,44 @@ const io = socketIo(server, {
     methods: ["GET", "POST"]
   }
 });
+
+// Google Apps Script configuration
+const GOOGLE_SCRIPT_CONFIG = {
+  url: 'https://script.google.com/macros/s/AKfycbwPRvQY2EdmV38kl2FABcrC6aL5X2i38Xt1m5FRgnagN5KGWrofHHqh_Eeg2GD6HHWo/exec',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+};
+
+// Function to sync donation data to Google Apps Script
+async function syncDonationToGoogleScript(donationData) {
+  try {
+    const payload = {
+      donorName: donationData.donorName,
+      foodType: donationData.foodType,
+      quantity: donationData.quantity,
+      imageUrl: donationData.imageUrl,
+      safetyScore: donationData.safetyScore,
+      safetyStatus: donationData.safetyStatus,
+      ngoName: donationData.ngoName || '',
+      pickupStatus: donationData.pickupStatus || 'pending'
+    };
+
+    console.log('Syncing donation to Google Apps Script:', payload);
+
+    const response = await axios.post(
+      GOOGLE_SCRIPT_CONFIG.url,
+      payload,
+      { headers: GOOGLE_SCRIPT_CONFIG.headers }
+    );
+
+    console.log('Google Apps Script sync successful:', response.data);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('Google Apps Script sync failed:', error.message);
+    return { success: false, error: error.message };
+  }
+}
 
 // Middleware
 app.use(cors());
@@ -436,6 +475,30 @@ app.post('/api/donations', authenticateToken, upload.single('foodImage'), async 
               location,
               safetyScore: analysis.safetyScore
             });
+
+            // Auto-sync to Google Apps Script
+            const donor = req.user;
+            const syncData = {
+              donorName: donor.name,
+              foodType: foodType,
+              quantity: quantity,
+              imageUrl: `${req.protocol}://${req.get('host')}${imagePath}`,
+              safetyScore: analysis.safetyScore,
+              safetyStatus: analysis.status,
+              ngoName: '',
+              pickupStatus: 'pending'
+            };
+
+            // Fire and forget - don't block response
+            syncDonationToGoogleScript(syncData).then(result => {
+              if (result.success) {
+                console.log('Auto-sync to Google Apps Script successful for donation:', donationId);
+              } else {
+                console.warn('Auto-sync to Google Apps Script failed for donation:', donationId, result.error);
+              }
+            }).catch(error => {
+              console.warn('Auto-sync error for donation:', donationId, error.message);
+            });
           }
 
           res.status(201).json({
@@ -594,6 +657,109 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
       }
     });
   });
+});
+
+// Manual sync endpoint - posts donation data to Google Apps Script
+app.post('/api/sync/google-apps-script', authenticateToken, async (req, res) => {
+  try {
+    const {
+      donorName,
+      foodType,
+      quantity,
+      imageUrl,
+      safetyScore,
+      safetyStatus,
+      ngoName,
+      pickupStatus
+    } = req.body;
+
+    if (!donorName || !foodType || !quantity || !safetyScore || !safetyStatus) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: donorName, foodType, quantity, safetyScore, safetyStatus' 
+      });
+    }
+
+    const syncData = {
+      donorName,
+      foodType,
+      quantity,
+      imageUrl: imageUrl || '',
+      safetyScore,
+      safetyStatus,
+      ngoName: ngoName || '',
+      pickupStatus: pickupStatus || 'pending'
+    };
+
+    const result = await syncDonationToGoogleScript(syncData);
+
+    if (result.success) {
+      res.json({
+        message: 'Data synced to Google Apps Script successfully',
+        data: result.data
+      });
+    } else {
+      res.status(500).json({
+        error: 'Failed to sync data to Google Apps Script',
+        details: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Manual sync error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Auto-sync endpoint for donation creation
+app.post('/api/sync/donation/:id', authenticateToken, async (req, res) => {
+  try {
+    const donationId = req.params.id;
+
+    // Get donation details with donor info
+    db.get(
+      `SELECT fd.*, u.name as donor_name, u.organization as donor_org
+       FROM food_donations fd
+       JOIN users u ON fd.donor_id = u.id
+       WHERE fd.id = ?`,
+      [donationId],
+      async (err, donation) => {
+        if (err) {
+          return res.status(500).json({ error: 'Failed to fetch donation data' });
+        }
+
+        if (!donation) {
+          return res.status(404).json({ error: 'Donation not found' });
+        }
+
+        const syncData = {
+          donorName: donation.donor_name,
+          foodType: donation.food_type,
+          quantity: donation.quantity,
+          imageUrl: `${req.protocol}://${req.get('host')}${donation.image_path}`,
+          safetyScore: donation.ai_safety_score || 0,
+          safetyStatus: donation.ai_status || 'Unknown',
+          ngoName: '',
+          pickupStatus: 'pending'
+        };
+
+        const result = await syncDonationToGoogleScript(syncData);
+
+        if (result.success) {
+          res.json({
+            message: 'Donation synced to Google Apps Script successfully',
+            data: result.data
+          });
+        } else {
+          res.status(500).json({
+            error: 'Failed to sync donation to Google Apps Script',
+            details: result.error
+          });
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Donation sync error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Socket.IO connection handling
