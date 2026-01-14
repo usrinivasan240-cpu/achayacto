@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 
 const Register = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -48,8 +49,13 @@ const Register = ({ onLogin }) => {
     const result = await register(formData);
     
     if (result.success) {
+      // Show success toast
+      toast.success('Registration successful');
+      
+      // Redirect to dashboard
       onLogin(localStorage.getItem('token'), result.user);
     } else {
+      // Show error message from response
       setError(result.error);
     }
     
