@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNotifications } from '../../context/NotificationContext';
 import axios from 'axios';
 import { 
@@ -21,18 +20,7 @@ const NGODashboard = ({ user, onLogout }) => {
   const [radius, setRadius] = useState(10);
   const { addNotification } = useNotifications();
 
-  useEffect(() => {
-    getCurrentLocation();
-  }, []);
-
-  useEffect(() => {
-    if (location.lat && location.lng) {
-      fetchAvailableDonations();
-    }
-    fetchMyClaims();
-  }, [location, radius]);
-
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -55,9 +43,9 @@ const NGODashboard = ({ user, onLogout }) => {
         }
       );
     }
-  };
+  }, [addNotification]);
 
-  const fetchAvailableDonations = async () => {
+  const fetchAvailableDonations = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get('/donations/nearby', {
@@ -78,16 +66,27 @@ const NGODashboard = ({ user, onLogout }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [location.lat, location.lng, radius, addNotification]);
 
-  const fetchMyClaims = async () => {
+  const fetchMyClaims = useCallback(async () => {
     try {
       const response = await axios.get('/donations/my');
       setMyClaims(response.data.donations.filter(d => d.status === 'claimed' || d.status === 'completed'));
     } catch (error) {
       console.error('Error fetching claims:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    getCurrentLocation();
+  }, [getCurrentLocation]);
+
+  useEffect(() => {
+    if (location.lat && location.lng) {
+      fetchAvailableDonations();
+    }
+    fetchMyClaims();
+  }, [location.lat, location.lng, radius, fetchAvailableDonations, fetchMyClaims]);
 
   const handleClaimDonation = async (donationId) => {
     try {

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import axios from 'axios';
 import { 
   PlusIcon, 
   PhotoIcon, 
   CheckCircleIcon,
-  ExclamationTriangleIcon,
   ClockIcon,
   MapPinIcon 
 } from '@heroicons/react/24/outline';
@@ -35,8 +33,6 @@ const DonorDashboard = ({ user, onLogout }) => {
     foodImage: null,
     imagePreview: null
   });
-  const [scanning, setScanning] = useState(false);
-  const [aiResult, setAiResult] = useState(null);
 
   useEffect(() => {
     fetchMyDonations();
@@ -109,7 +105,7 @@ const DonorDashboard = ({ user, onLogout }) => {
         }
       });
 
-      const response = await axios.post('/donations', formDataToSend, {
+      await axios.post('/donations', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -137,7 +133,6 @@ const DonorDashboard = ({ user, onLogout }) => {
         foodImage: null,
         imagePreview: null
       });
-      setAiResult(null);
       fetchMyDonations();
     } catch (error) {
       addNotification({

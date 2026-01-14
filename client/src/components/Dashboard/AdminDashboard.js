@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import axios from 'axios';
 import { 
@@ -17,7 +16,6 @@ const AdminDashboard = ({ user, onLogout }) => {
   const [analytics, setAnalytics] = useState({});
   const [allDonations, setAllDonations] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
   const { addNotification } = useNotifications();
 
   useEffect(() => {
